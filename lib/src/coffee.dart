@@ -8,28 +8,84 @@ const PatchMethod = "Patch";
 const HeadMethod = "Head";
 
 class CoffeeRequester {
+  List<CoffeeMiddleware> middlewares;
+  Map<String, CoffeeHttpRequest> requests;
+  http.Client client;
+
+  CoffeeRequester({this.middlewares, this.requests, this.client}) {
+    requests?.forEach((_, CoffeeHttpRequest request) {
+      configureRequest(request);
+    });
+    if (requests == null) {
+      requests = {};
+    }
+  }
+
+  CoffeeHttpRequest operator [](String name) {
+    CoffeeHttpRequest request = requests.containsKey(name) ? requests[name] : null;
+
+    if (request != null) {
+      request.requester = this;
+    }
+    return request;
+  }
+
+
+  operator []=(String name, CoffeeHttpRequest request) {
+    configureRequest(request);
+    if (requests == null) {
+      requests = {};
+    }
+    requests[name] = request;
+  }
+
+  configureRequest(CoffeeHttpRequest request) {
+    request.client = this.client;
+    request.requester = this;
+  }
+}
+
+class CoffeeHttpRequest extends CoffeeRequester {
   final String method;
   final Map<String, String> headers;
   String url;
-  final List<CoffeeMiddleware> middlewares;
-  final Map<String, CoffeeRequester> subPath;
 
   final Function decoder;
   final Function encoder;
 
-  CoffeeRequester(this.url,
+  CoffeeRequester requester;
+
+  CoffeeHttpRequest(this.url,
       {this.method: GetMethod,
       this.headers,
-      this.middlewares,
-      this.subPath,
+      List<CoffeeMiddleware> middlewares,
+      Map<String, CoffeeHttpRequest> requests,
+      http.Client client,
       this.decoder,
-      this.encoder}) {
-    subPath?.forEach((String name, CoffeeRequester req) {
-      req.url = url + req.url;
+      this.encoder})
+      : super(middlewares: middlewares, requests: requests, client: client) {
+    requests?.forEach((_, CoffeeHttpRequest request) {
+      configureRequest(request);
+      request.url = url + request.url;
     });
+    if (requests == null) {
+      requests = {};
+    }
   }
 
-  CoffeeRequester operator[](String name) => subPath.containsKey(name) ? subPath[name] : null;
+  CoffeeHttpRequest operator [](String name) {
+    CoffeeHttpRequest request = requests.containsKey(name) ? requests[name] : null;
+
+    if (request != null) {
+      request.requester = this.requester;
+    }
+    return request;
+  }
+
+  operator []=(String name, CoffeeHttpRequest request) {
+    request.url = url + request.url;
+    super[name] = request;
+  }
 
   Future<CoffeeResponse> execute({body, Map queryParameters, Map parameters}) {
     return coffee(this,
@@ -55,6 +111,8 @@ _addQueryParameters(CoffeeRequest request, Map<String, dynamic> parameters) {
 }
 
 Future<CoffeeResponse> _doRequest(CoffeeRequest request) {
+  _Requester _requester = new _Requester(request.config.client);
+
   if (request.method.toLowerCase() == GetMethod.toLowerCase()) {
     return _requester.get(request);
   } else if (request.method.toLowerCase() == PostMethod.toLowerCase()) {
@@ -72,7 +130,7 @@ Future<CoffeeResponse> _doRequest(CoffeeRequest request) {
   return null;
 }
 
-Future<CoffeeResponse> coffee(CoffeeRequester request,
+Future<CoffeeResponse> coffee(CoffeeHttpRequest request,
     {body, Map queryParameters, Map parameters}) async {
   CoffeeRequest _request = new CoffeeRequest(request, body);
 
@@ -94,3 +152,5 @@ Future<CoffeeResponse> coffee(CoffeeRequester request,
 
   return res;
 }
+
+http.Client sharedClient;

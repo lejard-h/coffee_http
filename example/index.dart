@@ -1,13 +1,14 @@
 /**
- * Created by lejard_h on 25/04/16.
+ * Created by lejard_h on 26/04/16.
  */
 
+import 'package:http/browser_client.dart' as http;
 import "package:coffee_http/coffee.dart";
 import "models/models.dart";
 import "api/api.dart";
 
-main() async {
-  initApi();
+void main() {
+  initApi(new http.BrowserClient());
 
   api["resources"].execute().then((CoffeeResponse _res) {
     print(_res.decodedBody as List<ResourceModel>);

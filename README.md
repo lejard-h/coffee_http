@@ -4,9 +4,27 @@ Easy http request for browser and server.
 
 ## Usage
 
-A simple usage example:
+### A simple usage example:
 
-### Model
+    import "package:coffee_http/coffee.dart";
+    
+    main() {
+    
+        Get request = new Get("http://localhost/data", middlewares: [
+            JSON_CONTENT_TYPE,
+            ENCODE_TO_JSON_MIDDLEWARE,
+            DECODE_FROM_JSON_MIDDLEWARE,
+        ]);
+        
+        request.execute().then((CoffeeResponse res) => print(res.decodedBody));
+    
+    }
+
+### More complexe example:
+
+[Example](https://github.com/lejard-h/coffee_http/tree/master/example)
+
+#### Model
 
     class ResourceModel {
       String name;
@@ -23,43 +41,43 @@ A simple usage example:
     
     }
 
-### Define Requests
-    Get resources = new Get("/resources",
-            decoder: (List json) {
-                   List<ResourceModel> list = [];
-                   json.forEach((Map data) => list.add( new ResourceModel.fromMap(data)));
-                   return list;
-            },
-            subPath: {
-              "read": new Get("/{name}", decoder: (Map json) => new ResourceModel.fromMap(json)),
-              "create": new Post("/create",
-                  encoder: (ResourceModel model) => model.toMap(), decoder: (Map json) => new ResourceModel.fromMap(json))
-            },
-          );
+#### Define Requests
+    CoffeeRequester api = new CoffeeRequester(middlewares: [
+            new ResolveApiMiddleware("http://localhost", 9000, subPath: "/api"),
+            LOGGER_MIDDLEWARE,
+            JSON_CONTENT_TYPE,
+            ENCODE_TO_JSON_MIDDLEWARE,
+            DECODE_FROM_JSON_MIDDLEWARE,
+        ], client: client);
+    
+        api["resources"] = new Get("/resources", decoder: ResourceModel.listDecoder);
+        api["resources"]["read"] = new Get("/{name}", decoder: ResourceModel.decoder);
+        api["resources"]["create"] = new Post("/create",
+            encoder: ResourceModel.encoder, decoder: ResourceModel.decoder);
 
-### Use it
+#### Use it
 
-    import 'package:coffee_http/coffee.dart';
-    import "package:http/browser_client.dart" as http; /// if you want to use in browser
-
-    main() async {
-         
-        /// if you want to use it in browser
-        setCoffeeHttpClient(new http.BrowserClient());
-        
-        coffeeMiddlewares([
-              new ResolveApiMiddleware("http://localhost", 9000, subPath: "/api"),
-              JSON_CONTENT_TYPE,
-              ENCODE_TO_JSON_MIDDLEWARE,
-              DECODE_FROM_JSON_MIDDLEWARE
-          ]);
-          
-        CoffeeResponse res;
-        
-        res = await resources.execute();
-        print(res.decodedBody as List<ResourceModel>);
-          
-        res = await resources["create"].execute(body: new ResourceModel("test"));
-        print(resource as ResourceModel);
-      
+    initApi();
+    
+    api["resources"].execute().then((CoffeeResponse _res) {
+    print(_res.decodedBody as List<ResourceModel>);
+    });
+    
+    api["resources"]["create"]
+      .execute(body: new ResourceModel()
+        ..name = "toto"
+        ..capacity = 3)
+      .then((CoffeeResponse _res) {
+    if (_res.statusCode == 200) {
+      ResourceModel resource = _res.decodedBody as ResourceModel;
+      print(resource);
     }
+    });
+    
+    api["resources"]["read"]
+      .execute(parameters: {"name": "toto"}).then((CoffeeResponse _res) {
+    if (_res.statusCode == 200) {
+      ResourceModel resource = _res.decodedBody as ResourceModel;
+      print(resource);
+    }
+    });

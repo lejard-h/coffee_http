@@ -4,39 +4,58 @@
 
 part of coffee;
 
-abstract class CoffeeMiddleware {
-  CoffeeRequest request(CoffeeRequest request) {
-    return request;
+class CoffeeMiddleware {
+  Function response;
+  Function request;
+
+  CoffeeMiddleware(
+      {CoffeeResponse response(CoffeeResponse res),
+      CoffeeRequest request(CoffeeRequest req)}) {
+    this.response = response;
+    this.request = request;
   }
 
-  CoffeeResponse response(CoffeeResponse response) {
-    return response;
+  CoffeeRequest pre(CoffeeRequest req) {
+    if (request != null) {
+      return request(req);
+    }
+    return req;
+  }
+
+  CoffeeResponse post(CoffeeResponse res) {
+    if (response != null) {
+      return response(res);
+    }
+    return res;
   }
 }
 
-List<CoffeeMiddleware> _middlewares = [];
+List<CoffeeMiddleware> _globalMiddlewares = [];
 
 _applyPreMiddlewareWith(
     List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
-    middleware.request(request);
+    middleware.pre(request);
   });
 }
 
 _applyPostMiddlewareWith(
     List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
-    middleware.response(response);
+    middleware.post(response);
   });
 }
 
 _preMiddleware(CoffeeRequest request) {
-  _applyPreMiddlewareWith(_middlewares, request);
-  _applyPreMiddlewareWith(request.request.middlewares, request);
+  _applyPreMiddlewareWith(_globalMiddlewares, request);
+  _applyPreMiddlewareWith(request.config.requester.middlewares, request);
+  _applyPreMiddlewareWith(request.config.middlewares, request);
 }
 
 _postMiddleware(CoffeeResponse response) {
-  _applyPostMiddlewareWith(_middlewares, response);
+  _applyPostMiddlewareWith(_globalMiddlewares, response);
+  _applyPostMiddlewareWith(
+      response.baseRequest.requester.middlewares, response);
   _applyPostMiddlewareWith(response.baseRequest.middlewares, response);
 }
 
@@ -45,9 +64,9 @@ class ResolveApiMiddleware extends CoffeeMiddleware {
   final num port;
   final String subPath;
 
-  ResolveApiMiddleware(this.hostname, this.port, {this.subPath});
+  ResolveApiMiddleware(this.hostname, this.port, {this.subPath}) : super();
 
-  CoffeeRequest request(CoffeeRequest request) {
+  CoffeeRequest pre(CoffeeRequest request) {
     request.url = "$hostname:$port${(subPath ?? "")}${request.url}";
     return request;
   }
@@ -58,7 +77,7 @@ class HeadersMiddleware extends CoffeeMiddleware {
 
   HeadersMiddleware(this.headers);
 
-  CoffeeRequest request(CoffeeRequest request) {
+  CoffeeRequest pre(CoffeeRequest request) {
     request.headers.addAll(headers);
     return request;
   }
@@ -71,8 +90,8 @@ class BodyEncoderMiddleware extends CoffeeMiddleware {
     this._bodyEncoder = bodyEncoder;
   }
 
-  CoffeeRequest request(CoffeeRequest request) {
-    if (request.request != GetMethod) {
+  CoffeeRequest pre(CoffeeRequest request) {
+    if (request.config != GetMethod) {
       request.body = _bodyEncoder(request.body);
     }
     return request;
@@ -86,12 +105,21 @@ class BodyDecoderMiddleware extends CoffeeMiddleware {
     this._bodyDecoder = bodyDecoder;
   }
 
-  CoffeeResponse response(CoffeeResponse response) {
+  CoffeeResponse post(CoffeeResponse response) {
     if (response.decodedBody == null) {
       response.decodedBody = response.body;
     }
     response.decodedBody = _bodyDecoder(response.decodedBody);
     return response;
+  }
+}
+
+class LoggerMiddleware extends CoffeeMiddleware {
+  LoggerMiddleware({logger(CoffeeResponse res)}) {
+    response = (CoffeeResponse res) {
+      logger(res);
+      return res;
+    };
   }
 }
 
@@ -103,6 +131,10 @@ BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE =
 HeadersMiddleware JSON_CONTENT_TYPE =
     new HeadersMiddleware({"Content-Type": "application/json"});
 
+LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(
+    logger: (CoffeeResponse res) => print(
+        "${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
+
 coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
-  _middlewares = middlewares ?? [];
+  _globalMiddlewares = middlewares ?? [];
 }
