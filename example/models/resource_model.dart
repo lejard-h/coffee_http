@@ -10,8 +10,7 @@ class ResourceModel {
 
   ResourceModel();
 
-  factory ResourceModel.fromMap(Map json) =>
-      new ResourceModelDecoder().convert(json);
+  factory ResourceModel.fromMap(Map<String, dynamic> json) => new ResourceModelDecoder().convert(json);
 
   Map toMap() => new ResourceModelEncoder().convert(this);
 

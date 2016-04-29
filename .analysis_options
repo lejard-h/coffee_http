@@ -1,0 +1,10 @@
+analyzer:
+    strong-mode: true
+linter:
+    rules:
+        - camel_case_types
+        - empty_constructor_bodies
+        - always_declare_return_types
+        - always_specify_types
+        - annotate_overrides
+        - avoid_init_to_null

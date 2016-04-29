@@ -21,7 +21,7 @@ import '../models/models.dart';
 //---------------------------------------------------------------------
 
 /// A [ModelDecoder] for [ResourceModel].
-class ResourceModelDecoder extends Converter<Map, ResourceModel>
+class ResourceModelDecoder extends Converter<Map<dynamic, dynamic>, ResourceModel>
     implements ModelDecoder<ResourceModel> {
   @override
   ResourceModel create() => new ResourceModel();
@@ -36,7 +36,7 @@ class ResourceModelDecoder extends Converter<Map, ResourceModel>
 }
 
 /// A [ModelEncoder] for [ResourceModel].
-class ResourceModelEncoder extends Converter<ResourceModel, Map>
+class ResourceModelEncoder extends Converter<ResourceModel, Map<dynamic, dynamic>>
     implements ModelEncoder<ResourceModel> {
   @override
   Map convert(ResourceModel input) {

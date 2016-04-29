@@ -1,11 +1,11 @@
 part of coffee;
 
-const GetMethod = "Get";
-const PostMethod = "Post";
-const PutMethod = "Put";
-const DeleteMethod = "Delete";
-const PatchMethod = "Patch";
-const HeadMethod = "Head";
+const String GetMethod = "Get";
+const String PostMethod = "Post";
+const String PutMethod = "Put";
+const String DeleteMethod = "Delete";
+const String PatchMethod = "Patch";
+const String HeadMethod = "Head";
 
 class CoffeeRequester {
   List<CoffeeMiddleware> middlewares;
@@ -30,8 +30,7 @@ class CoffeeRequester {
     return request;
   }
 
-
-  operator []=(String name, CoffeeHttpRequest request) {
+  void operator []=(String name, CoffeeHttpRequest request) {
     configureRequest(request);
     if (requests == null) {
       requests = {};
@@ -39,7 +38,7 @@ class CoffeeRequester {
     requests[name] = request;
   }
 
-  configureRequest(CoffeeHttpRequest request) {
+  void configureRequest(CoffeeHttpRequest request) {
     request.client = this.client;
     request.requester = this;
   }
@@ -73,6 +72,7 @@ class CoffeeHttpRequest extends CoffeeRequester {
     }
   }
 
+  @override
   CoffeeHttpRequest operator [](String name) {
     CoffeeHttpRequest request = requests.containsKey(name) ? requests[name] : null;
 
@@ -82,28 +82,28 @@ class CoffeeHttpRequest extends CoffeeRequester {
     return request;
   }
 
-  operator []=(String name, CoffeeHttpRequest request) {
+  @override
+  void operator []=(String name, CoffeeHttpRequest request) {
     request.url = url + request.url;
     super[name] = request;
   }
 
-  Future<CoffeeResponse> execute({body, Map queryParameters, Map parameters}) {
-    return coffee(this,
-        body: body, queryParameters: queryParameters, parameters: parameters);
+  Future<CoffeeResponse> execute(
+      {dynamic body, Map<String, dynamic> queryParameters, Map<String, dynamic> parameters}) {
+    return coffee(this, body: body, queryParameters: queryParameters, parameters: parameters);
   }
 }
 
-_replaceParameters(CoffeeRequest request, Map<String, dynamic> parameters) {
-  parameters?.forEach((String key, value) {
-    request.url =
-        request.url.replaceAll("{$key}", Uri.encodeComponent(value.toString()));
+void _replaceParameters(CoffeeRequest request, Map<String, dynamic> parameters) {
+  parameters?.forEach((String key, dynamic value) {
+    request.url = request.url.replaceAll("{$key}", Uri.encodeComponent(value.toString()));
   });
 }
 
-_addQueryParameters(CoffeeRequest request, Map<String, dynamic> parameters) {
+void _addQueryParameters(CoffeeRequest request, Map<String, dynamic> parameters) {
   if (parameters != null && parameters.isNotEmpty) {
     request.url = "${request.url}?";
-    parameters?.forEach((String key, value) {
+    parameters?.forEach((String key, dynamic value) {
       request.url = "${request.url}${Uri.encodeQueryComponent(key)}=${Uri
           .encodeQueryComponent(value.toString())}&";
     });
@@ -131,7 +131,7 @@ Future<CoffeeResponse> _doRequest(CoffeeRequest request) {
 }
 
 Future<CoffeeResponse> coffee(CoffeeHttpRequest request,
-    {body, Map queryParameters, Map parameters}) async {
+    {dynamic body, Map<String, dynamic> queryParameters, Map<String, dynamic> parameters}) async {
   CoffeeRequest _request = new CoffeeRequest(request, body);
 
   if (request.encoder != null) {

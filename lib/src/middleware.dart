@@ -8,9 +8,7 @@ class CoffeeMiddleware {
   Function response;
   Function request;
 
-  CoffeeMiddleware(
-      {CoffeeResponse response(CoffeeResponse res),
-      CoffeeRequest request(CoffeeRequest req)}) {
+  CoffeeMiddleware({CoffeeResponse response(CoffeeResponse res), CoffeeRequest request(CoffeeRequest req)}) {
     this.response = response;
     this.request = request;
   }
@@ -32,30 +30,27 @@ class CoffeeMiddleware {
 
 List<CoffeeMiddleware> _globalMiddlewares = [];
 
-_applyPreMiddlewareWith(
-    List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
+void _applyPreMiddlewareWith(List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
     middleware.pre(request);
   });
 }
 
-_applyPostMiddlewareWith(
-    List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
+void _applyPostMiddlewareWith(List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
     middleware.post(response);
   });
 }
 
-_preMiddleware(CoffeeRequest request) {
+void _preMiddleware(CoffeeRequest request) {
   _applyPreMiddlewareWith(_globalMiddlewares, request);
   _applyPreMiddlewareWith(request.config.requester.middlewares, request);
   _applyPreMiddlewareWith(request.config.middlewares, request);
 }
 
-_postMiddleware(CoffeeResponse response) {
+void _postMiddleware(CoffeeResponse response) {
   _applyPostMiddlewareWith(_globalMiddlewares, response);
-  _applyPostMiddlewareWith(
-      response.baseRequest.requester.middlewares, response);
+  _applyPostMiddlewareWith(response.baseRequest.requester.middlewares, response);
   _applyPostMiddlewareWith(response.baseRequest.middlewares, response);
 }
 
@@ -66,6 +61,7 @@ class ResolveApiMiddleware extends CoffeeMiddleware {
 
   ResolveApiMiddleware(this.hostname, this.port, {this.subPath}) : super();
 
+  @override
   CoffeeRequest pre(CoffeeRequest request) {
     request.url = "$hostname:$port${(subPath ?? "")}${request.url}";
     return request;
@@ -77,6 +73,7 @@ class HeadersMiddleware extends CoffeeMiddleware {
 
   HeadersMiddleware(this.headers);
 
+  @override
   CoffeeRequest pre(CoffeeRequest request) {
     request.headers.addAll(headers);
     return request;
@@ -86,10 +83,11 @@ class HeadersMiddleware extends CoffeeMiddleware {
 class BodyEncoderMiddleware extends CoffeeMiddleware {
   Function _bodyEncoder;
 
-  BodyEncoderMiddleware(bodyEncoder(body)) {
+  BodyEncoderMiddleware(bodyEncoder(dynamic body)) {
     this._bodyEncoder = bodyEncoder;
   }
 
+  @override
   CoffeeRequest pre(CoffeeRequest request) {
     if (request.config != GetMethod) {
       request.body = _bodyEncoder(request.body);
@@ -101,10 +99,11 @@ class BodyEncoderMiddleware extends CoffeeMiddleware {
 class BodyDecoderMiddleware extends CoffeeMiddleware {
   Function _bodyDecoder;
 
-  BodyDecoderMiddleware(dynamic bodyDecoder(body)) {
+  BodyDecoderMiddleware(dynamic bodyDecoder(dynamic body)) {
     this._bodyDecoder = bodyDecoder;
   }
 
+  @override
   CoffeeResponse post(CoffeeResponse response) {
     if (response.decodedBody == null) {
       response.decodedBody = response.body;
@@ -123,18 +122,14 @@ class LoggerMiddleware extends CoffeeMiddleware {
   }
 }
 
-BodyEncoderMiddleware ENCODE_TO_JSON_MIDDLEWARE =
-    new BodyEncoderMiddleware((body) => JSON.encode(body));
-BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE =
-    new BodyDecoderMiddleware((body) => JSON.decode(body));
+BodyEncoderMiddleware ENCODE_TO_JSON_MIDDLEWARE = new BodyEncoderMiddleware((dynamic body) => JSON.encode(body));
+BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE = new BodyDecoderMiddleware((dynamic body) => JSON.decode(body));
 
-HeadersMiddleware JSON_CONTENT_TYPE =
-    new HeadersMiddleware({"Content-Type": "application/json"});
+HeadersMiddleware JSON_CONTENT_TYPE = new HeadersMiddleware({"Content-Type": "application/json"});
 
-LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(
-    logger: (CoffeeResponse res) => print(
-        "${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
+LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(logger: (CoffeeResponse res) =>
+    print("${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
 
-coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
+void coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
   _globalMiddlewares = middlewares ?? [];
 }
