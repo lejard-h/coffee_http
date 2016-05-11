@@ -1,6 +1,6 @@
 name: coffee_http
 description: Easy http request
-version: 0.2.2
+version: 0.2.3
 author: Hadrien Lejard <hadrien.lejard@gmail.com>
 homepage: https://github.com/lejard-h/coffee_http
 

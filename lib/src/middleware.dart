@@ -8,7 +8,9 @@ class CoffeeMiddleware {
   Function response;
   Function request;
 
-  CoffeeMiddleware({CoffeeResponse response(CoffeeResponse res), CoffeeRequest request(CoffeeRequest req)}) {
+  CoffeeMiddleware(
+      {CoffeeResponse response(CoffeeResponse res),
+      CoffeeRequest request(CoffeeRequest req)}) {
     this.response = response;
     this.request = request;
   }
@@ -30,13 +32,15 @@ class CoffeeMiddleware {
 
 List<CoffeeMiddleware> _globalMiddlewares = [];
 
-void _applyPreMiddlewareWith(List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
+void _applyPreMiddlewareWith(
+    List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
     middleware.pre(request);
   });
 }
 
-void _applyPostMiddlewareWith(List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
+void _applyPostMiddlewareWith(
+    List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
   listMiddleWare?.forEach((CoffeeMiddleware middleware) {
     middleware.post(response);
   });
@@ -50,7 +54,8 @@ void _preMiddleware(CoffeeRequest request) {
 
 void _postMiddleware(CoffeeResponse response) {
   _applyPostMiddlewareWith(_globalMiddlewares, response);
-  _applyPostMiddlewareWith(response.baseRequest.requester.middlewares, response);
+  _applyPostMiddlewareWith(
+      response.baseRequest.requester.middlewares, response);
   _applyPostMiddlewareWith(response.baseRequest.middlewares, response);
 }
 
@@ -122,24 +127,48 @@ class LoggerMiddleware extends CoffeeMiddleware {
   }
 }
 
-
-LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(logger: (CoffeeResponse res) =>
-    print("${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
+LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(
+    logger: (CoffeeResponse res) => print(
+        "${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
 
 void coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
   _globalMiddlewares = middlewares ?? [];
 }
 
-CoffeeMiddleware JSON_CONTENT_TYPE = new CoffeeMiddleware(request: (CoffeeRequest request) {
-  if (request.headers == null) {
-    request.headers = {};
-  }
-  if (request.body != null) {
-    request.headers["content-type"] = "application/json";
+class JsonMiddleware extends CoffeeMiddleware {
+  @override
+  CoffeeRequest pre(CoffeeRequest request) {
+    if (request.headers == null) {
+      request.headers = {};
+    }
+    if (request.body != null &&
+        request.body is String &&
+        _isJSON(request.body)) {
+      request.headers["Content-Type"] =
+          "application/json,${request.headers["Content-Type"]}";
+      request.body = JSON.encode(request.body);
+    }
+    return request;
   }
 
-  return request;
-});
+  @override
+  CoffeeResponse post(CoffeeResponse response) {
+    if (response.decodedBody == null) {
+      response.decodedBody = response.body;
+    }
+    if (response.headers.containsKey("Content-Type") &&
+        response.headers["Content-Type"].contains("application/json") &&
+        response.decodedBody is String &&
+        _isJSON(response.decodedBody)) {}
+    response.decodedBody = JSON.decode(response.decodedBody);
+    return response;
+  }
+}
 
-BodyEncoderMiddleware ENCODE_TO_JSON_MIDDLEWARE = new BodyEncoderMiddleware((dynamic body) => body != null ? JSON.encode(body) : null);
-BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE = new BodyDecoderMiddleware((dynamic body) => body != null ? JSON.decode(body) : null);
+CoffeeMiddleware JSON_MIDDLEWARE = new JsonMiddleware();
+
+bool _isJSON(String json) {
+  return json != null &&
+      ((json.startsWith("{") && json.endsWith("}")) ||
+          (json.startsWith("[") && json.endsWith("]")));
+}
