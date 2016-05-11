@@ -142,8 +142,7 @@ class JsonMiddleware extends CoffeeMiddleware {
       request.headers = {};
     }
     if (request.body != null &&
-        request.body is String &&
-        _isJSON(request.body)) {
+        (request.body is Map || request.body is List)) {
       request.headers["Content-Type"] =
           "application/json,${request.headers["Content-Type"]}";
       request.body = JSON.encode(request.body);
