@@ -122,10 +122,6 @@ class LoggerMiddleware extends CoffeeMiddleware {
   }
 }
 
-BodyEncoderMiddleware ENCODE_TO_JSON_MIDDLEWARE = new BodyEncoderMiddleware((dynamic body) => JSON.encode(body));
-BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE = new BodyDecoderMiddleware((dynamic body) => JSON.decode(body));
-
-HeadersMiddleware JSON_CONTENT_TYPE = new HeadersMiddleware({"Content-Type": "application/json"});
 
 LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(logger: (CoffeeResponse res) =>
     print("${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
@@ -133,3 +129,17 @@ LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(logger: (CoffeeRespons
 void coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
   _globalMiddlewares = middlewares ?? [];
 }
+
+CoffeeMiddleware JSON_CONTENT_TYPE = new CoffeeMiddleware(request: (CoffeeRequest request) {
+  if (request.headers == null) {
+    request.headers = {};
+  }
+  if (request.body != null) {
+    request.headers["content-type"] = "application/json";
+  }
+
+  return request;
+});
+
+BodyEncoderMiddleware ENCODE_TO_JSON_MIDDLEWARE = new BodyEncoderMiddleware((dynamic body) => body != null ? JSON.encode(body) : null);
+BodyDecoderMiddleware DECODE_FROM_JSON_MIDDLEWARE = new BodyDecoderMiddleware((dynamic body) => body != null ? JSON.decode(body) : null);
