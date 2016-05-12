@@ -38,7 +38,12 @@ class Get extends CoffeeHttpRequest {
       List<CoffeeMiddleware> middlewares,
       Map<String, CoffeeHttpRequest> requests,
       dynamic decoder(dynamic body)})
-      : super(url, method: GetMethod, headers: headers, middlewares: middlewares, requests: requests, decoder: decoder);
+      : super(url,
+            method: GetMethod,
+            headers: headers,
+            middlewares: middlewares,
+            requests: requests,
+            decoder: decoder);
 }
 
 class Post extends CoffeeHttpRequest {
@@ -65,7 +70,7 @@ class Put extends CoffeeHttpRequest {
       dynamic decoder(dynamic body),
       dynamic encoder(dynamic body)})
       : super(url,
-            method: PostMethod,
+            method: PutMethod,
             headers: headers,
             middlewares: middlewares,
             requests: requests,
@@ -79,7 +84,12 @@ class Delete extends CoffeeHttpRequest {
       List<CoffeeMiddleware> middlewares,
       Map<String, CoffeeHttpRequest> requests,
       dynamic decoder(dynamic body)})
-      : super(url, method: GetMethod, headers: headers, middlewares: middlewares, requests: requests, decoder: decoder);
+      : super(url,
+            method: DeleteMethod,
+            headers: headers,
+            middlewares: middlewares,
+            requests: requests,
+            decoder: decoder);
 }
 
 class _Requester {
@@ -89,49 +99,73 @@ class _Requester {
 
   Future<CoffeeResponse> get(CoffeeRequest request) async {
     if (client == null) {
-      return new CoffeeResponse(await http.get(request.url, headers: request.headers), request.config);
+      return new CoffeeResponse(
+          await http.get(request.url, headers: request.headers),
+          request.config);
     }
-    return new CoffeeResponse(await client.get(request.url, headers: request.headers), request.config);
+    return new CoffeeResponse(
+        await client.get(request.url, headers: request.headers),
+        request.config);
   }
 
   Future<CoffeeResponse> post(CoffeeRequest request) async {
     if (client == null) {
       return new CoffeeResponse(
-          await http.post(request.url, headers: request.headers, body: request.body), request.config);
+          await http.post(request.url,
+              headers: request.headers, body: request.body),
+          request.config);
     }
     return new CoffeeResponse(
-        await client.post(request.url, headers: request.headers, body: request.body), request.config);
+        await client.post(request.url,
+            headers: request.headers, body: request.body),
+        request.config);
   }
 
   Future<CoffeeResponse> put(CoffeeRequest request) async {
     if (client == null) {
       return new CoffeeResponse(
-          await http.put(request.url, headers: request.headers, body: request.body), request.config);
+          await http.put(request.url,
+              headers: request.headers, body: request.body),
+          request.config);
     }
     return new CoffeeResponse(
-        await client.put(request.url, headers: request.headers, body: request.body), request.config);
+        await client.put(request.url,
+            headers: request.headers, body: request.body),
+        request.config);
   }
 
   Future<CoffeeResponse> patch(CoffeeRequest request) async {
     if (client == null) {
       return new CoffeeResponse(
-          await http.patch(request.url, headers: request.headers, body: request.body), request.config);
+          await http.patch(request.url,
+              headers: request.headers, body: request.body),
+          request.config);
     }
     return new CoffeeResponse(
-        await client.patch(request.url, headers: request.headers, body: request.body), request.config);
+        await client.patch(request.url,
+            headers: request.headers, body: request.body),
+        request.config);
   }
 
   Future<CoffeeResponse> delete(CoffeeRequest request) async {
     if (client == null) {
-      return new CoffeeResponse(await http.delete(request.url, headers: request.headers), request.config);
+      return new CoffeeResponse(
+          await http.delete(request.url, headers: request.headers),
+          request.config);
     }
-    return new CoffeeResponse(await client.delete(request.url, headers: request.headers), request.config);
+    return new CoffeeResponse(
+        await client.delete(request.url, headers: request.headers),
+        request.config);
   }
 
   Future<CoffeeResponse> head(CoffeeRequest request) async {
     if (client == null) {
-      return new CoffeeResponse(await http.head(request.url, headers: request.headers), request.config);
+      return new CoffeeResponse(
+          await http.head(request.url, headers: request.headers),
+          request.config);
     }
-    return new CoffeeResponse(await client.head(request.url, headers: request.headers), request.config);
+    return new CoffeeResponse(
+        await client.head(request.url, headers: request.headers),
+        request.config);
   }
 }

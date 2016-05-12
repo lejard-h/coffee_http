@@ -141,33 +141,35 @@ class JsonMiddleware extends CoffeeMiddleware {
     if (request.headers == null) {
       request.headers = {};
     }
-    if (request.body != null &&
-        (request.body is Map || request.body is List)) {
-      request.headers["Content-Type"] =
-          "application/json,${request.headers["Content-Type"]}";
+    if (request.body != null) {
+      request.headers["content-type"] =
+      "application/json${request.headers["content-type"] != null ? ",${request.headers["content-type"]}" : "" }";
       request.body = JSON.encode(request.body);
     }
     return request;
   }
+
+  bool _isJSON(String json) {
+    return json != null &&
+        ((json.startsWith("{") && json.endsWith("}")) ||
+            (json.startsWith("[") && json.endsWith("]")));
+  }
+
 
   @override
   CoffeeResponse post(CoffeeResponse response) {
     if (response.decodedBody == null) {
       response.decodedBody = response.body;
     }
-    if (response.headers.containsKey("Content-Type") &&
-        response.headers["Content-Type"].contains("application/json") &&
+
+    if (response.headers.containsKey("content-type") &&
+        response.headers["content-type"].contains("application/json") &&
         response.decodedBody is String &&
-        _isJSON(response.decodedBody)) {}
-    response.decodedBody = JSON.decode(response.decodedBody);
+        _isJSON(response.decodedBody)) {
+      response.decodedBody = JSON.decode(response.decodedBody);
+    }
     return response;
   }
 }
 
 CoffeeMiddleware JSON_MIDDLEWARE = new JsonMiddleware();
-
-bool _isJSON(String json) {
-  return json != null &&
-      ((json.startsWith("{") && json.endsWith("}")) ||
-          (json.startsWith("[") && json.endsWith("]")));
-}
