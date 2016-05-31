@@ -1,21 +1,58 @@
-/**
- * Created by lejard_h on 25/04/16.
- */
+import "dart:async";
 
-part of coffee;
+import "package:http/http.dart" as http;
+import "coffee.dart";
+import "middleware.dart";
+import 'response.dart';
 
-class CoffeeResponse extends http.Response {
-  dynamic decodedBody;
+class CoffeeHttpRequest extends CoffeeRequester {
+  final String method;
+  final Map<String, String> headers;
+  String url;
 
-  CoffeeHttpRequest baseRequest;
+  final Function decoder;
+  final Function encoder;
 
-  CoffeeResponse(http.Response response, this.baseRequest)
-      : super(response.body, response.statusCode,
-            request: response.request,
-            headers: response.headers,
-            isRedirect: response.isRedirect,
-            persistentConnection: response.persistentConnection,
-            reasonPhrase: response.reasonPhrase);
+  CoffeeRequester requester;
+
+  CoffeeHttpRequest(this.url,
+      {this.method: GetMethod,
+      this.headers,
+      List<CoffeeMiddleware> middlewares,
+      Map<String, CoffeeHttpRequest> requests,
+      http.Client client,
+      this.decoder,
+      this.encoder})
+      : super(middlewares: middlewares, requests: requests, client: client) {
+    requests?.forEach((_, CoffeeHttpRequest request) {
+      configureRequest(request);
+      request.url = url + request.url;
+    });
+    if (requests == null) {
+      requests = {};
+    }
+  }
+
+  @override
+  CoffeeHttpRequest operator [](String name) {
+    CoffeeHttpRequest request = requests.containsKey(name) ? requests[name] : null;
+
+    if (request != null) {
+      request.requester = this.requester;
+    }
+    return request;
+  }
+
+  @override
+  void operator []=(String name, CoffeeHttpRequest request) {
+    request.url = url + request.url;
+    super[name] = request;
+  }
+
+  Future<CoffeeResponse> execute(
+      {dynamic body, Map<String, dynamic> queryParameters, Map<String, dynamic> parameters}) {
+    return coffee(this, body: body, queryParameters: queryParameters, parameters: parameters);
+  }
 }
 
 class CoffeeRequest {
@@ -90,82 +127,4 @@ class Delete extends CoffeeHttpRequest {
             middlewares: middlewares,
             requests: requests,
             decoder: decoder);
-}
-
-class _Requester {
-  http.Client client;
-
-  _Requester(this.client);
-
-  Future<CoffeeResponse> get(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.get(request.url, headers: request.headers),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.get(request.url, headers: request.headers),
-        request.config);
-  }
-
-  Future<CoffeeResponse> post(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.post(request.url,
-              headers: request.headers, body: request.body),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.post(request.url,
-            headers: request.headers, body: request.body),
-        request.config);
-  }
-
-  Future<CoffeeResponse> put(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.put(request.url,
-              headers: request.headers, body: request.body),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.put(request.url,
-            headers: request.headers, body: request.body),
-        request.config);
-  }
-
-  Future<CoffeeResponse> patch(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.patch(request.url,
-              headers: request.headers, body: request.body),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.patch(request.url,
-            headers: request.headers, body: request.body),
-        request.config);
-  }
-
-  Future<CoffeeResponse> delete(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.delete(request.url, headers: request.headers),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.delete(request.url, headers: request.headers),
-        request.config);
-  }
-
-  Future<CoffeeResponse> head(CoffeeRequest request) async {
-    if (client == null) {
-      return new CoffeeResponse(
-          await http.head(request.url, headers: request.headers),
-          request.config);
-    }
-    return new CoffeeResponse(
-        await client.head(request.url, headers: request.headers),
-        request.config);
-  }
 }

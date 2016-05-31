@@ -5,7 +5,7 @@
 import "package:grinder/grinder.dart";
 import "package:dogma_codegen/build.dart" as dogma_build;
 
-main(List<String> args) {
+void main(List<String> args) {
   grind(args);
 }
 

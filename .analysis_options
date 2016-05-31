@@ -1,5 +1,7 @@
 analyzer:
     strong-mode: true
+    exclude:
+      - example/**
 linter:
     rules:
         - camel_case_types

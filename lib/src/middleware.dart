@@ -1,8 +1,10 @@
-/**
- * Created by lejard_h on 25/04/16.
- */
 
-part of coffee;
+import "dart:convert";
+
+import "coffee.dart";
+import "request.dart";
+import "response.dart";
+import "utils.dart";
 
 class CoffeeMiddleware {
   Function response;
@@ -30,34 +32,6 @@ class CoffeeMiddleware {
   }
 }
 
-List<CoffeeMiddleware> _globalMiddlewares = [];
-
-void _applyPreMiddlewareWith(
-    List<CoffeeMiddleware> listMiddleWare, CoffeeRequest request) {
-  listMiddleWare?.forEach((CoffeeMiddleware middleware) {
-    middleware.pre(request);
-  });
-}
-
-void _applyPostMiddlewareWith(
-    List<CoffeeMiddleware> listMiddleWare, CoffeeResponse response) {
-  listMiddleWare?.forEach((CoffeeMiddleware middleware) {
-    middleware.post(response);
-  });
-}
-
-void _preMiddleware(CoffeeRequest request) {
-  _applyPreMiddlewareWith(_globalMiddlewares, request);
-  _applyPreMiddlewareWith(request.config.requester.middlewares, request);
-  _applyPreMiddlewareWith(request.config.middlewares, request);
-}
-
-void _postMiddleware(CoffeeResponse response) {
-  _applyPostMiddlewareWith(_globalMiddlewares, response);
-  _applyPostMiddlewareWith(
-      response.baseRequest.requester.middlewares, response);
-  _applyPostMiddlewareWith(response.baseRequest.middlewares, response);
-}
 
 class ResolveApiMiddleware extends CoffeeMiddleware {
   final String hostname;
@@ -132,7 +106,7 @@ LoggerMiddleware LOGGER_MIDDLEWARE = new LoggerMiddleware(
         "${res.baseRequest.method.toUpperCase()} [${res.request.url}] [${res.statusCode}]"));
 
 void coffeeMiddlewares(List<CoffeeMiddleware> middlewares) {
-  _globalMiddlewares = middlewares ?? [];
+  globalMiddlewares = middlewares ?? [];
 }
 
 class JsonMiddleware extends CoffeeMiddleware {

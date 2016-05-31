@@ -4,10 +4,7 @@
 
 library coffee;
 
-import "package:http/http.dart" as http;
-import "dart:convert";
-import "dart:async";
-
-part "src/coffee.dart";
-part "src/middleware.dart";
-part "src/request.dart";
+export 'src/coffee.dart';
+export 'src/request.dart';
+export 'src/response.dart';
+export 'src/middleware.dart';
